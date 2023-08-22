@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Typeface;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -54,9 +56,11 @@ import com.viewpagerindicator.PageIndicator;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -422,60 +426,66 @@ public class PhotoEditorActivity extends AppCompatActivity implements View.OnCli
                     RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
             layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
             parentImageRelativeLayout.setLayoutParams(layoutParams);
+            Context context=this;
             new CountDownTimer(1000, 500) {
+
                 public void onTick(long millisUntilFinished) {
 
                 }
 
                 public void onFinish() {
-                    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                    String imageName = "IMG_" + timeStamp + ".jpg";
-                    Intent returnIntent = new Intent();
-
-                    if (isSDCARDMounted()) {
-                        String folderName = "PhotoEditorSDK";
-                        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), folderName);
-                        if (!mediaStorageDir.exists() && !mediaStorageDir.mkdirs()) {
-                            Log.d("PhotoEditorSDK", "Failed to create directory");
-                        }
-
-                        String selectedOutputPath = mediaStorageDir.getPath() + File.separator + imageName;
-                        returnIntent.putExtra("imagePath", selectedOutputPath);
-                        Log.d("PhotoEditorSDK", "selected camera path " + selectedOutputPath);
-                        File file = new File(selectedOutputPath);
-
-                        try {
-                            FileOutputStream out = new FileOutputStream(file);
-                            if (parentImageRelativeLayout != null) {
-                                parentImageRelativeLayout.setDrawingCacheEnabled(true);
-
-                                Bitmap bitmap = parentImageRelativeLayout.getDrawingCache();
-                                Bitmap rotatedBitmap = rotateBitmap(bitmap, imageOrientation, true);
-                                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
-                            }
-
-                            out.flush();
-                            out.close();
-
-                            try {
-                                ExifInterface exifDest = new ExifInterface(file.getAbsolutePath());
-                                exifDest.setAttribute(ExifInterface.TAG_ORIENTATION, Integer.toString(imageOrientation));
-                                exifDest.saveAttributes();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        } catch (Exception var7) {
-                            var7.printStackTrace();
-                        }
-                    }
-
-                    setResult(Activity.RESULT_OK, returnIntent);
+//                    Intent returnIntent = new Intent();
+                    String selectedImagePath = getIntent().getExtras().getString("selectedImagePath");
+                    copyFileToStorageAndGallery(context,selectedImagePath);
+//                    setResult(Activity.RESULT_OK, returnIntent);
                     finish();
                 }
             }.start();
+
             Toast.makeText(this, getString(R.string.save_image_succeed), Toast.LENGTH_SHORT).show();
         } else {
             showPermissionRequest();
+        }
+    }
+
+    public static void copyFileToStorageAndGallery(Context context, String sourceFilePath) {
+        try {
+            File sourceFile = new File(sourceFilePath);
+            FileInputStream inputStream = new FileInputStream(sourceFile);
+            
+
+//            if (!destinationDirectory.exists()) {
+//                destinationDirectory.mkdirs();
+//            }
+
+            System.out.println("destinationDirectory" + Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES));
+//            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+//            String imageName = "IMG_" + timeStamp + ".jpg";
+
+            File destinationFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), sourceFile.getName());
+            FileOutputStream outputStream = new FileOutputStream(destinationFile);
+
+//            FileChannel inChannel = inputStream.getChannel();
+//            FileChannel outChannel = outputStream.getChannel();
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, length);
+            }
+            inputStream.close();
+            outputStream.close();
+            MediaScannerConnection.scanFile(
+                    context,
+                    new String[]{destinationFile.getAbsolutePath()},
+                    null,
+                    (path, uri) -> {
+                        // File scanned and added to the gallery
+                        Log.d("MediaScanner", "Scanned " + path + ": " + uri);
+                    }
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
