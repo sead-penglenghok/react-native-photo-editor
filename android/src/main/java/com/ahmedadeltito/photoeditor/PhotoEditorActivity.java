@@ -432,9 +432,9 @@ public class PhotoEditorActivity extends AppCompatActivity implements View.OnCli
                     String imageName = "IMG_" + timeStamp + ".jpg";
                     Intent returnIntent = new Intent();
 
-                    // if (isSDCARDMounted()) {
+                    if (isSDCARDMounted()) {
                         String folderName = "PhotoEditorSDK";
-                        File mediaStorageDir = new File(Environment.getDataDirectory((Environment.DIRECTORY_PICTURES), folderName);
+                        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), folderName);
                         if (!mediaStorageDir.exists() && !mediaStorageDir.mkdirs()) {
                             Log.d("PhotoEditorSDK", "Failed to create directory");
                         }
@@ -467,7 +467,7 @@ public class PhotoEditorActivity extends AppCompatActivity implements View.OnCli
                         } catch (Exception var7) {
                             var7.printStackTrace();
                         }
-                    // }
+                    }
 
                     setResult(Activity.RESULT_OK, returnIntent);
                     finish();
