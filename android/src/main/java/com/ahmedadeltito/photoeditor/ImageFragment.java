@@ -38,12 +38,12 @@ public class ImageFragment extends Fragment implements ImageAdapter.OnImageClick
             stickerBitmaps = new ArrayList<>();
 
             for (int i = 0;i < stickers.size();i++) {
-                stickerBitmaps.add(decodeSampledBitmapFromResource(getActivity().getResources(), stickers.get(i), 120, 120));
+                stickerBitmaps.add(decodeSampledBitmapFromResource(getActivity().getResources(), stickers.get(i), 220, 220));
             }
         } else {
             stickerBitmaps = new ArrayList<>();
             for (int i = 0; i < images.length(); i++) {
-                stickerBitmaps.add(decodeSampledBitmapFromResource(photoEditorActivity.getResources(), images.getResourceId(i, -1), 120, 120));
+                stickerBitmaps.add(decodeSampledBitmapFromResource(photoEditorActivity.getResources(), images.getResourceId(i, -1), 220, 220));
             }
         }
     }
